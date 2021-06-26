@@ -56,7 +56,7 @@ survdata$churn_factor <- as.factor(survdata$churn_value)
 hist(survdata$months, xlab="Length of Survival Time (Months)", main="Histogram of Survial Time for Customer Churn")
 ```
 
-![](Survival-Markdown_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Services_Bar_Chart.svg?raw=true&sanitize=true)
 
 ## First Kaplan-Meier Curve
 
