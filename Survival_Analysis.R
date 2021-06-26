@@ -4,7 +4,9 @@ survdata <- read.csv("survival.csv")
 
 head(survdata, n=5)
 survdata$churn_factor <- as.factor(survdata$churn_value)
+svg(filename = "hist.svg")
 hist(survdata$months, xlab="Length of Survival Time (Months)", main="Histogram of Survial Time for Customer Churn")
+dev.off() 
 
 survfit1 <- survfit(Surv(months, churn_value) ~ 1, data = survdata)
 basic_plot <- ggsurvplot(survfit1,
