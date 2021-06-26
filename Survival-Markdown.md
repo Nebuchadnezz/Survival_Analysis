@@ -1,4 +1,4 @@
-Survival\_Project
+Survival Analysis of Customer Time-to-Churn
 ================
 Corey Neff
 6/25/2021
@@ -13,14 +13,50 @@ will also consider customer satisfaction, as well.
 We will start by reading the data, and turning churn value (“Yes”, “No”)
 into a factor, while doing some basic visualizations.
 
-``` {r}
+``` r
 librarian::shelf(survival, survminer, dplyr, ggplot2)
+```
+
+    ## 
+    ##   The 'cran_repo' argument in shelf() was not set, so it will use
+    ##   cran_repo = 'https://cran.r-project.org' by default.
+    ## 
+    ##   To avoid this message, set the 'cran_repo' argument to a CRAN
+    ##   mirror URL (see https://cran.r-project.org/mirrors.html) or set
+    ##   'quiet = TRUE'.
+
+``` r
 survdata <- read.csv("survival.csv")
 
+
 head(survdata, n=5)
+```
+
+    ##   X         id months   offer phone multiple internet_type gb_mon security
+    ## 1 0 8779-QRDMV      1    None    No       No           DSL      8       No
+    ## 2 1 7495-OOKFY      8 Offer E   Yes      Yes   Fiber Optic     17       No
+    ## 3 2 1658-BYGOY     18 Offer D   Yes      Yes   Fiber Optic     52       No
+    ## 4 3 4598-XLKNJ     25 Offer C   Yes       No   Fiber Optic     12       No
+    ## 5 4 4846-WHAFZ     37 Offer C   Yes      Yes   Fiber Optic     14       No
+    ##   backup protection support unlimited       contract paperless         payment
+    ## 1     No        Yes      No        No Month-to-Month       Yes Bank Withdrawal
+    ## 2    Yes         No      No       Yes Month-to-Month       Yes     Credit Card
+    ## 3     No         No      No       Yes Month-to-Month       Yes Bank Withdrawal
+    ## 4    Yes        Yes      No       Yes Month-to-Month       Yes Bank Withdrawal
+    ## 5     No         No      No       Yes Month-to-Month       Yes Bank Withdrawal
+    ##   monthly total_revenue satisfaction churn_value churn_score cltv
+    ## 1   39.65         59.65            3           1          91 5433
+    ## 2   80.65       1024.10            3           1          69 5302
+    ## 3   95.45       1910.88            2           1          81 3179
+    ## 4   98.50       2995.07            2           1          88 5337
+    ## 5   76.50       3102.36            2           1          67 2793
+
+``` r
 survdata$churn_factor <- as.factor(survdata$churn_value)
 hist(survdata$months, xlab="Length of Survival Time (Months)", main="Histogram of Survial Time for Customer Churn")
 ```
+
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
 ## First Kaplan-Meier Curve
 
@@ -31,7 +67,21 @@ time in many small intervals. Here, “survival time” is the time-to-churn
 (i.e. length of time before a cutomer stopped using services, or
 customer attrition).
 
-`{r pressure, warning=FALSE} survfit1 <- survfit(Surv(months, churn_value) ~ 1, data = survdata) basic_plot <- ggsurvplot(survfit1,            conf.int = T,            conf.int.fill = "red",            ylim = c(0.5, 1),            xlim = c(0, max(survdata$months)),            xlab = "Time (months)",            legend = "none",            title = "Kaplan-Meier Curve for Time to Customer Churn (full sample)",            ggtheme = theme_bw()) print(basic_plot)`
+``` r
+survfit1 <- survfit(Surv(months, churn_value) ~ 1, data = survdata)
+basic_plot <- ggsurvplot(survfit1,
+           conf.int = T,
+           conf.int.fill = "red",
+           ylim = c(0.5, 1),
+           xlim = c(0, max(survdata$months)),
+           xlab = "Time (months)",
+           legend = "none",
+           title = "Kaplan-Meier Curve for Time to Customer Churn (full sample)",
+           ggtheme = theme_bw())
+print(basic_plot)
+```
+
+![](Survival-Markdown_files/figure-gfm/pressure-1.png)<!-- -->
 
 ## Multiple Services – Important?
 
@@ -42,7 +92,7 @@ affects survival time. Do customers with less services (i.e. a single
 service) churn faster than those with more? First we will start with a
 simple bar chart vizualization to begin to investigate this issue.
 
-``` {r}
+``` r
 multiple <- survdata %>%
                   filter(multiple == "Yes") %>%
                   ggplot() + 
@@ -64,6 +114,8 @@ single <-   survdata %>%
 egg::ggarrange(plots = list(single, multiple), nrow = 1)
 ```
 
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
 ## Kaplan-Meier Estimator Part Deux
 
 As we can see, customers subscribing to multiple services tend to
@@ -71,7 +123,7 @@ survive (i.e. not churn) a much longer time than those subscribed to a
 single service. We will be able to see this a bit more clearly with
 another Kaplan-Meier Curve.
 
-``` {r}
+``` r
 survfit2 <- survfit(Surv(months, churn_value) ~ multiple, data = survdata)
 services_plot <- ggsurvplot(survfit2,
            conf.int = T,
@@ -87,6 +139,8 @@ services_plot <- ggsurvplot(survfit2,
            ggtheme = theme_bw())
 print(services_plot)
 ```
+
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ## Kaplan-Meier Estimator Part Deux
 
@@ -105,10 +159,30 @@ of suffering the event of interest), given that the participant has
 survived up to a specific time. Comparing hazard rates allows us to
 create a hazard ratio, which is similar to an odds ratio.
 
-``` {r,warning=false}
+``` r
 coxfit1 <- coxph(Surv(months, churn_value) ~ multiple, data = survdata)
 summary(coxfit1)
+```
 
+    ## Call:
+    ## coxph(formula = Surv(months, churn_value) ~ multiple, data = survdata)
+    ## 
+    ##   n= 7043, number of events= 1869 
+    ## 
+    ##                 coef exp(coef) se(coef)      z Pr(>|z|)    
+    ## multipleYes -0.23780   0.78836  0.04701 -5.059 4.22e-07 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ##             exp(coef) exp(-coef) lower .95 upper .95
+    ## multipleYes    0.7884      1.268     0.719    0.8644
+    ## 
+    ## Concordance= 0.551  (se = 0.006 )
+    ## Likelihood ratio test= 25.72  on 1 df,   p=4e-07
+    ## Wald test            = 25.59  on 1 df,   p=4e-07
+    ## Score (logrank) test = 25.7  on 1 df,   p=4e-07
+
+``` r
 cox_services <- ggadjustedcurves(coxfit1, variable = "multiple",
                  ylim = c(0.5, 1),
                  ggtheme = theme_bw(),
@@ -118,6 +192,8 @@ cox_services <- ggadjustedcurves(coxfit1, variable = "multiple",
                  title = 'Survival Curves for Cox Proportional Hazards Model, by Number of "Services"') 
 print(cox_services)
 ```
+
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ## Cox Proportional Hazards Model – Univariate
 
@@ -138,7 +214,37 @@ in mind, this next model will include the individual services being
 subscribed to (security, backup, protection, and support) as well as
 customer satisfaction, for good measure.
 
-`{r, warning=FALSE} coxfit2 <- coxph(Surv(months, churn_value) ~ security + backup + protection + support + satisfaction, data = survdata) summary(coxfit2)`
+``` r
+coxfit2 <- coxph(Surv(months, churn_value) ~ security + backup + protection + support + satisfaction, data = survdata)
+summary(coxfit2)
+```
+
+    ## Call:
+    ## coxph(formula = Surv(months, churn_value) ~ security + backup + 
+    ##     protection + support + satisfaction, data = survdata)
+    ## 
+    ##   n= 7043, number of events= 1869 
+    ## 
+    ##                   coef exp(coef) se(coef)       z Pr(>|z|)    
+    ## securityYes   -1.05484   0.34825  0.06640 -15.885  < 2e-16 ***
+    ## backupYes     -0.55706   0.57289  0.05400 -10.316  < 2e-16 ***
+    ## protectionYes -0.45660   0.63343  0.05347  -8.539  < 2e-16 ***
+    ## supportYes    -0.39926   0.67082  0.06558  -6.088 1.14e-09 ***
+    ## satisfaction  -1.31675   0.26800  0.02366 -55.664  < 2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ##               exp(coef) exp(-coef) lower .95 upper .95
+    ## securityYes      0.3482      2.872    0.3057    0.3967
+    ## backupYes        0.5729      1.746    0.5154    0.6369
+    ## protectionYes    0.6334      1.579    0.5704    0.7034
+    ## supportYes       0.6708      1.491    0.5899    0.7628
+    ## satisfaction     0.2680      3.731    0.2559    0.2807
+    ## 
+    ## Concordance= 0.902  (se = 0.003 )
+    ## Likelihood ratio test= 4770  on 5 df,   p=<2e-16
+    ## Wald test            = 3585  on 5 df,   p=<2e-16
+    ## Score (logrank) test = 5544  on 5 df,   p=<2e-16
 
 ## Cox Proportional Hazards Model – Multivariate
 
@@ -150,7 +256,17 @@ impact on hazard as indicated by it beign the lowest hazard ratio among
 the included predictors. For that reason, it may be beneficial to see
 this effect visually.
 
-`{r, warning=FALSE} cox_satisfaction <- ggadjustedcurves(coxfit2, variable = "satisfaction",                  ylim = c(0, 1),                  ggtheme = theme_bw(),                  xlab = "Time (months)",                  title = 'Survival Curves for Cox Proportional Hazards Model, by "Satisfaction"',                  legend.title = "Product Satisfaction") print(cox_satisfaction)`
+``` r
+cox_satisfaction <- ggadjustedcurves(coxfit2, variable = "satisfaction",
+                 ylim = c(0, 1),
+                 ggtheme = theme_bw(),
+                 xlab = "Time (months)",
+                 title = 'Survival Curves for Cox Proportional Hazards Model, by "Satisfaction"',
+                 legend.title = "Product Satisfaction")
+print(cox_satisfaction)
+```
+
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ## Cox Proportional Hazards Model – Customer Satisfaction
 
