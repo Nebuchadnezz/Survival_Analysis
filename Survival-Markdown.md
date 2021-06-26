@@ -56,7 +56,7 @@ survdata$churn_factor <- as.factor(survdata$churn_value)
 hist(survdata$months, xlab="Length of Survival Time (Months)", main="Histogram of Survial Time for Customer Churn")
 ```
 
-![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Services_Bar_Chart.svg?raw=true&sanitize=true)
+![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/hist.svg?raw=true&sanitize=true)
 
 ## First Kaplan-Meier Curve
 
@@ -81,7 +81,7 @@ basic_plot <- ggsurvplot(survfit1,
 print(basic_plot)
 ```
 
-![](Survival-Markdown_files/figure-gfm/pressure-1.png)<!-- -->
+![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Basic_Survival_Plot.svg?raw=true&sanitize=true)
 
 ## Multiple Services – Important?
 
@@ -114,7 +114,7 @@ single <-   survdata %>%
 egg::ggarrange(plots = list(single, multiple), nrow = 1)
 ```
 
-![](Survival-Markdown_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Services_Bar_Chart.svg?raw=true&sanitize=true)
 
 ## Kaplan-Meier Estimator Part Deux
 
@@ -140,7 +140,7 @@ services_plot <- ggsurvplot(survfit2,
 print(services_plot)
 ```
 
-![](Survival-Markdown_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Services_Survival_Plot.svg?raw=true&sanitize=true)
 
 ## Kaplan-Meier Estimator Part Deux
 
@@ -193,7 +193,7 @@ cox_services <- ggadjustedcurves(coxfit1, variable = "multiple",
 print(cox_services)
 ```
 
-![](Survival-Markdown_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Services_Cox_Plot.svg?raw=true&sanitize=true)
 
 ## Cox Proportional Hazards Model – Univariate
 
@@ -266,7 +266,7 @@ cox_satisfaction <- ggadjustedcurves(coxfit2, variable = "satisfaction",
 print(cox_satisfaction)
 ```
 
-![](Survival-Markdown_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Satisfaction_Cox_Plot.svg?raw=true&sanitize=true)
 
 ## Cox Proportional Hazards Model – Customer Satisfaction
 
