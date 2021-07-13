@@ -4,7 +4,7 @@ author: "Corey Neff"
 date: "6/25/2021"
 output:
  github_document:
-    html_preview: false
+    html_preview: T
   
 ---
 ## Introduction
@@ -88,11 +88,11 @@ services_plot <- ggsurvplot(survfit2,
 print(services_plot)
 ```
 
-## Kaplan-Meier Estimator Part Deux 
+## Cox Proportional Hazards -- Univariate
 
 So, it seems that customers subscribed to a single service tend to face attrition at a generaly faster rate early-on. That is, early in their patronage, they are much more likely to churn than those subsccribed to multiple services. In the long-run, however, the survival probaility appears to be about the same for both groups.
 
-Now we will begin to investigate a more parametric route -- the Cox Proportional Hazards Model, specifically. Cox models handle multiple covariates much better, which will be useful later. In addition, in a Cox proportional hazards regression model, the measure of effect is the hazard rate, which is the risk of failure (i.e., the risk or probability of suffering the event of interest), given that the participant has survived up to a specific time. Comparing hazard rates allows us to create a hazard ratio, which is similar to an odds ratio.
+Now we will begin to investigate a semi-parametric route -- the Cox Proportional Hazards Model, specifically. Cox models handle multiple covariates much better, which will be useful later. In addition, in a Cox proportional hazards regression model, the measure of effect is the hazard rate, which is the risk of failure (i.e., the risk or probability of suffering the event of interest), given that the participant has survived up to a specific time. Comparing hazard rates allows us to create a hazard ratio, which is similar to an odds ratio.
 
 ```{r,warning=FALSE}
 coxfit1 <- coxph(Surv(months, churn_value) ~ multiple, data = survdata)
@@ -108,20 +108,22 @@ cox_services <- ggadjustedcurves(coxfit1, variable = "multiple",
 print(cox_services)
 ```
 
-## Cox Proportional Hazards Model -- Univariate
+## Cox Proportional Hazards Model -- Multivariate
 
 The Cox distribution yields similar conclusions to the Kaplan-Meier curve before. Generally, people with multiple services have a higher survival rate with respect to time. From the output, we might turn our attention to the exponentiated coefficient of multiple services variable: 0.788. FIn this case, subscribing to multiple services reduces the hazard by a factor of 0.79, or 21%. Therefore, subscribing to multiple services is associated with a good prognosis as far as churn goes. Additionally, we can see that the covariate and model are both significant.
 
-Now that we understands that, generally, subscribing to multiple services corresponds to less churn, I think a solid next step would be to see which services in particular are better in this regard. With that in mind, this next model will include the individual services being subscribed to (security, backup, protection, and support) as well as customer satisfaction, for good measure.
+Now that we understands that, generally, subscribing to multiple services corresponds to less churn, I think a solid next step would be to see which services in particular are better in this regard. With that in mind, this next model will include the individual services being subscribed to (security, backup, protection, and support) as well as customer satisfaction and offer type, for good measure.
 
 ```{r, warning=FALSE}
-coxfit2 <- coxph(Surv(months, churn_value) ~ security + backup + protection + support + satisfaction, data = survdata)
+coxfit2 <- coxph(Surv(months, churn_value) ~ security + backup + protection + support + satisfaction + offer, data = survdata)
 summary(coxfit2)
 ```
 
 ## Cox Proportional Hazards Model -- Multivariate
 
-As we can see, the model and all covariates are statistically significant. Additionally, it seems that subscribing to the security service yields the greatest reduction in hazard at a hazard ratio of 0.3482. Even so, it appears that customer satisfaction has the greatest impact on hazard as indicated by it beign the lowest hazard ratio among the included predictors. For that reason, it may be beneficial to see this effect visually. 
+As we can see, the model and all covariates are statistically significant. Additionally, it seems that subscribing to the security service yields the greatest reduction in hazard among the available services at a hazard ratio of 0.3482. Even so, it appears that customer satisfaction and offer type have the greatest impact on hazard as indicated by it being the lowest hazard ratio among the included predictors. 
+
+To investigate further, It may be beneficial to see this effect visually. 
 
 ```{r, warning=FALSE}
 cox_satisfaction <- ggadjustedcurves(coxfit2, variable = "satisfaction",
@@ -130,11 +132,29 @@ cox_satisfaction <- ggadjustedcurves(coxfit2, variable = "satisfaction",
                  xlab = "Time (months)",
                  title = 'Survival Curves for Cox Proportional Hazards Model, by "Satisfaction"',
                  legend.title = "Product Satisfaction")
-print(cox_satisfaction)
+
+cox_offer <- ggadjustedcurves(coxfit2, variable = "offer",
+                 ylim = c(0, 1),
+                 ggtheme = theme_bw(),
+                 xlab = "Time (months)",
+                 title = 'Survival Curves for Cox Proportional Hazards Model, by "Offer"',
+                 legend.title = "Offer Type")
+egg::ggarrange(cox_satisfaction, cox_offer)
 ```
 
 ## Cox Proportional Hazards Model -- Customer Satisfaction
 
 Customer satisfaction seems to have a particularly pronounced (and understandable) effect on customer attrition over time. Customers reporting high satisfaction (i.e. a 5) survive at a rate of what appears to be nearly 100% at the end of the reporting period, while those reporting low satisfaction (i.e. a 1) survive at an abysmal rate -- nearly entirely gone at 70 months. For that reason, the wisest business decision may be to maintain high levels of customer satisfaction; albeit, this is a rather unsurprising takeaway.
 
+Offer Type, too, has a sizable effect on churn time. In particular, *Offer E* seems to lead to much higher churn -- even higher than having no offer at all. In the absence of other information, perhaps this offer package should be retired.
 
+Next, lets run some diagnostics on the Cox model to test the proportional hazards assumption. To do this, we will have a look at the Schoenfield residuals. Schoenfeld residuals represent the difference between the observed covariate and the expected given the risk set at that time. They should be flat, centered about zero.
+
+```{r diag}
+cox.zph(coxfit2)
+ggcoxdiagnostics(coxfit2,  type = "schoenfeld")
+```
+
+## Cox Proportional Hazards Model -- Multivariate Diagnostics
+
+It seems pretty clear from the Schoenfield residuals that the proportional hazards assumption is violated. This conclusion is validated by the *cox.zph* hypothesis test. We reject the null hypothesis that there is no time independence. An assumption of the Cox model is that a covariate's influence on survival is constant with respect to time. In this case, this is true with none of the variables. Ultimately, this may impact the validity of the results. The easiest way to address this shortcoming is by stratifying the data, but I am doubtful this will help much at all. Ultimately, I think it would be best to move forward in spite of this, with the understanding that the assumption violation may reduce the model usefulness.

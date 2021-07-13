@@ -56,7 +56,7 @@ survdata$churn_factor <- as.factor(survdata$churn_value)
 hist(survdata$months, xlab="Length of Survival Time (Months)", main="Histogram of Survial Time for Customer Churn")
 ```
 
-![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/hist.svg?raw=true&sanitize=true)
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
 ## First Kaplan-Meier Curve
 
@@ -81,7 +81,7 @@ basic_plot <- ggsurvplot(survfit1,
 print(basic_plot)
 ```
 
-![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Basic_Survival_Plot.svg?raw=true&sanitize=true)
+![](Survival-Markdown_files/figure-gfm/pressure-1.png)<!-- -->
 
 ## Multiple Services – Important?
 
@@ -114,7 +114,7 @@ single <-   survdata %>%
 egg::ggarrange(plots = list(single, multiple), nrow = 1)
 ```
 
-![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Services_Bar_Chart.svg?raw=true&sanitize=true)
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ## Kaplan-Meier Estimator Part Deux
 
@@ -140,9 +140,9 @@ services_plot <- ggsurvplot(survfit2,
 print(services_plot)
 ```
 
-![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Services_Survival_Plot.svg?raw=true&sanitize=true)
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
-## Kaplan-Meier Estimator Part Deux
+## Cox Proportional Hazards – Univariate
 
 So, it seems that customers subscribed to a single service tend to face
 attrition at a generaly faster rate early-on. That is, early in their
@@ -150,7 +150,7 @@ patronage, they are much more likely to churn than those subsccribed to
 multiple services. In the long-run, however, the survival probaility
 appears to be about the same for both groups.
 
-Now we will begin to investigate a more parametric route – the Cox
+Now we will begin to investigate a semi-parametric route – the Cox
 Proportional Hazards Model, specifically. Cox models handle multiple
 covariates much better, which will be useful later. In addition, in a
 Cox proportional hazards regression model, the measure of effect is the
@@ -193,9 +193,9 @@ cox_services <- ggadjustedcurves(coxfit1, variable = "multiple",
 print(cox_services)
 ```
 
-![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Services_Cox_Plot.svg?raw=true&sanitize=true)
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
-## Cox Proportional Hazards Model – Univariate
+## Cox Proportional Hazards Model – Multivariate
 
 The Cox distribution yields similar conclusions to the Kaplan-Meier
 curve before. Generally, people with multiple services have a higher
@@ -212,49 +212,62 @@ services corresponds to less churn, I think a solid next step would be
 to see which services in particular are better in this regard. With that
 in mind, this next model will include the individual services being
 subscribed to (security, backup, protection, and support) as well as
-customer satisfaction, for good measure.
+customer satisfaction and offer type, for good measure.
 
 ``` r
-coxfit2 <- coxph(Surv(months, churn_value) ~ security + backup + protection + support + satisfaction, data = survdata)
+coxfit2 <- coxph(Surv(months, churn_value) ~ security + backup + protection + support + satisfaction + offer, data = survdata)
 summary(coxfit2)
 ```
 
     ## Call:
     ## coxph(formula = Surv(months, churn_value) ~ security + backup + 
-    ##     protection + support + satisfaction, data = survdata)
+    ##     protection + support + satisfaction + offer, data = survdata)
     ## 
     ##   n= 7043, number of events= 1869 
     ## 
     ##                   coef exp(coef) se(coef)       z Pr(>|z|)    
-    ## securityYes   -1.05484   0.34825  0.06640 -15.885  < 2e-16 ***
-    ## backupYes     -0.55706   0.57289  0.05400 -10.316  < 2e-16 ***
-    ## protectionYes -0.45660   0.63343  0.05347  -8.539  < 2e-16 ***
-    ## supportYes    -0.39926   0.67082  0.06558  -6.088 1.14e-09 ***
-    ## satisfaction  -1.31675   0.26800  0.02366 -55.664  < 2e-16 ***
+    ## securityYes   -0.93927   0.39091  0.06669 -14.084  < 2e-16 ***
+    ## backupYes     -0.41330   0.66146  0.05494  -7.523 5.34e-14 ***
+    ## protectionYes -0.35135   0.70374  0.05390  -6.519 7.10e-11 ***
+    ## supportYes    -0.36163   0.69654  0.06575  -5.500 3.80e-08 ***
+    ## satisfaction  -1.24121   0.28903  0.02381 -52.136  < 2e-16 ***
+    ## offerOffer A  -1.62260   0.19738  0.17649  -9.194  < 2e-16 ***
+    ## offerOffer B  -0.95674   0.38414  0.10606  -9.021  < 2e-16 ***
+    ## offerOffer C  -0.23791   0.78827  0.10898  -2.183   0.0290 *  
+    ## offerOffer D   0.22377   1.25078  0.08914   2.510   0.0121 *  
+    ## offerOffer E   1.80737   6.09439  0.07323  24.679  < 2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ##               exp(coef) exp(-coef) lower .95 upper .95
-    ## securityYes      0.3482      2.872    0.3057    0.3967
-    ## backupYes        0.5729      1.746    0.5154    0.6369
-    ## protectionYes    0.6334      1.579    0.5704    0.7034
-    ## supportYes       0.6708      1.491    0.5899    0.7628
-    ## satisfaction     0.2680      3.731    0.2559    0.2807
+    ## securityYes      0.3909     2.5581    0.3430    0.4455
+    ## backupYes        0.6615     1.5118    0.5939    0.7367
+    ## protectionYes    0.7037     1.4210    0.6332    0.7822
+    ## supportYes       0.6965     1.4357    0.6123    0.7923
+    ## satisfaction     0.2890     3.4598    0.2759    0.3028
+    ## offerOffer A     0.1974     5.0662    0.1397    0.2790
+    ## offerOffer B     0.3841     2.6032    0.3120    0.4729
+    ## offerOffer C     0.7883     1.2686    0.6367    0.9760
+    ## offerOffer D     1.2508     0.7995    1.0503    1.4896
+    ## offerOffer E     6.0944     0.1641    5.2795    7.0351
     ## 
-    ## Concordance= 0.902  (se = 0.003 )
-    ## Likelihood ratio test= 4770  on 5 df,   p=<2e-16
-    ## Wald test            = 3585  on 5 df,   p=<2e-16
-    ## Score (logrank) test = 5544  on 5 df,   p=<2e-16
+    ## Concordance= 0.926  (se = 0.002 )
+    ## Likelihood ratio test= 5598  on 10 df,   p=<2e-16
+    ## Wald test            = 4325  on 10 df,   p=<2e-16
+    ## Score (logrank) test = 7157  on 10 df,   p=<2e-16
 
 ## Cox Proportional Hazards Model – Multivariate
 
 As we can see, the model and all covariates are statistically
 significant. Additionally, it seems that subscribing to the security
-service yields the greatest reduction in hazard at a hazard ratio of
-0.3482. Even so, it appears that customer satisfaction has the greatest
-impact on hazard as indicated by it beign the lowest hazard ratio among
-the included predictors. For that reason, it may be beneficial to see
-this effect visually.
+service yields the greatest reduction in hazard among the available
+services at a hazard ratio of 0.3482. Even so, it appears that customer
+satisfaction and offer type have the greatest impact on hazard as
+indicated by it being the lowest hazard ratio among the included
+predictors.
+
+To investigate further, It may be beneficial to see this effect
+visually.
 
 ``` r
 cox_satisfaction <- ggadjustedcurves(coxfit2, variable = "satisfaction",
@@ -263,10 +276,17 @@ cox_satisfaction <- ggadjustedcurves(coxfit2, variable = "satisfaction",
                  xlab = "Time (months)",
                  title = 'Survival Curves for Cox Proportional Hazards Model, by "Satisfaction"',
                  legend.title = "Product Satisfaction")
-print(cox_satisfaction)
+
+cox_offer <- ggadjustedcurves(coxfit2, variable = "offer",
+                 ylim = c(0, 1),
+                 ggtheme = theme_bw(),
+                 xlab = "Time (months)",
+                 title = 'Survival Curves for Cox Proportional Hazards Model, by "Offer"',
+                 legend.title = "Offer Type")
+egg::ggarrange(cox_satisfaction, cox_offer)
 ```
 
-![Alt text](https://github.com/Nebuchadnezz/Survival_Analysis/blob/master/Plots/Satisfaction_Cox_Plot.svg?raw=true&sanitize=true)
+![](Survival-Markdown_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ## Cox Proportional Hazards Model – Customer Satisfaction
 
@@ -278,3 +298,49 @@ reporting low satisfaction (i.e. a 1) survive at an abysmal rate –
 nearly entirely gone at 70 months. For that reason, the wisest business
 decision may be to maintain high levels of customer satisfaction;
 albeit, this is a rather unsurprising takeaway.
+
+Offer Type, too, has a sizable effect on churn time. In particular,
+*Offer E* seems to lead to much higher churn – even higher than having
+no offer at all. In the absence of other information, perhaps this offer
+package should be retired.
+
+Next, lets run some diagnostics on the Cox model to test the
+proportional hazards assumption. To do this, we will have a look at the
+Schoenfield residuals. Schoenfeld residuals represent the difference
+between the observed covariate and the expected given the risk set at
+that time. They should be flat, centered about zero.
+
+``` r
+cox.zph(coxfit2)
+```
+
+    ##               chisq df       p
+    ## security       11.9  1 0.00056
+    ## backup         30.1  1 4.1e-08
+    ## protection     46.6  1 8.8e-12
+    ## support        17.1  1 3.5e-05
+    ## satisfaction  187.6  1 < 2e-16
+    ## offer         768.5  5 < 2e-16
+    ## GLOBAL       1012.4 10 < 2e-16
+
+``` r
+ggcoxdiagnostics(coxfit2,  type = "schoenfeld")
+```
+
+    ## `geom_smooth()` using formula 'y ~ x'
+
+![](Survival-Markdown_files/figure-gfm/diag-1.png)<!-- -->
+
+## Cox Proportional Hazards Model – Multivariate Diagnostics
+
+It seems pretty clear from the Schoenfield residuals that the
+proportional hazards assumption is violated. This conclusion is
+validated by the *cox.zph* hypothesis test. We reject the null
+hypothesis that there is no time independence. An assumption of the Cox
+model is that a covariate’s influence on survival is constant with
+respect to time. In this case, this is true with none of the variables.
+Ultimately, this may impact the validity of the results. The easiest way
+to address this shortcoming is by stratifying the data, but I am
+doubtful this will help much at all. Ultimately, I think it would be
+best to move forward in spite of this, with the understanding that the
+assumption violation may reduce the model usefulness.
